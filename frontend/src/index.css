@@ -1,0 +1,264 @@
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+/* ── Reset & Variables ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ivory: #F5F5F0;
+  --red: #E53935;
+  --black: #09090b;
+  --z900: #18181b;
+  --z800: #27272a;
+  --z700: #3f3f46;
+  --z500: #71717a;
+  --z400: #a1a1aa;
+  --z300: #d4d4d8;
+  --serif: 'Libre Baskerville', serif;
+  --mono: 'Space Mono', monospace;
+  --sans: 'Space Grotesk', sans-serif;
+}
+
+body {
+  background-color: var(--black);
+  color: var(--ivory);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+::selection { background: var(--red); color: #fff; }
+
+.app {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 3rem 2rem 10rem 2rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--z800);
+  padding-bottom: 1.5rem;
+  margin-bottom: 4rem;
+  flex-shrink: 0;
+}
+.header-title { font-family: var(--serif); font-size: 2rem; font-weight: 700; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+/* ── Landing Hero Box ── */
+.hero-box {
+  background: var(--z900);
+  border: 1px solid var(--z800);
+  padding: 5rem 3rem;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8);
+  animation: boxEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes boxEnter { from { opacity: 0; transform: scale(0.98) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.hero-box-accent {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 2px;
+  background: linear-gradient(to right, var(--red) 10%, transparent 90%);
+}
+
+.hero-title { font-family: var(--serif); font-size: 2.25rem; font-weight: 400; color: var(--ivory); margin-bottom: 1rem; letter-spacing: -0.01em; }
+.hero-desc { font-size: 1rem; color: var(--z500); max-width: 500px; margin: 0 auto 3rem; line-height: 1.7; }
+
+/* ── Custom Drop Zone Inside Hero ── */
+.dropzone-trigger {
+  display: inline-block;
+  background: var(--ivory);
+  color: var(--black);
+  padding: 1.25rem 2.5rem;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+.dropzone-trigger:hover { background: #fff; transform: translateY(-2px); }
+.dropzone-trigger:active { transform: translateY(0); }
+
+.dropzone-note {
+  display: block;
+  margin-top: 1.25rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--z700);
+  letter-spacing: 0.1em;
+}
+
+/* ── Chat Feed ── */
+.chat-feed {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  margin-bottom: 2rem;
+}
+
+.message { display: flex; flex-direction: column; max-width: 90%; animation: msgIn 0.5s ease forwards; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.message.user { align-self: flex-end; align-items: flex-end; }
+.message.assistant { align-self: flex-start; align-items: flex-start; }
+
+.message-label { font-family: var(--mono); font-size: 0.6rem; color: var(--z500); margin-bottom: 0.5rem; letter-spacing: 0.1em; }
+.message-content { font-size: 1.05rem; line-height: 1.7; color: var(--z300); width: 100%; }
+
+.chat-markdown-renderer p { margin-bottom: 1rem; }
+.chat-markdown-renderer p:last-child { margin-bottom: 0; }
+.chat-markdown-renderer ul, .chat-markdown-renderer ol { padding-left: 1.25rem; margin-bottom: 1rem; }
+.chat-markdown-renderer li { margin-bottom: 0.5rem; }
+.chat-markdown-renderer strong { color: var(--ivory); font-weight: 600; }
+.chat-markdown-renderer h1, .chat-markdown-renderer h2, .chat-markdown-renderer h3 { 
+  font-family: var(--serif); color: var(--ivory); margin: 1.5rem 0 0.75rem; 
+}
+.chat-markdown-renderer h3 { font-size: 1.1rem; }
+
+.message.user .message-content {
+  background: var(--z900);
+  padding: 0.8rem 1.4rem;
+  border-right: 2px solid var(--red);
+  font-style: italic;
+}
+
+/* ── Collapsible Roadmap ── */
+.roadmap-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: var(--ivory);
+  color: var(--black);
+  border: none;
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+  cursor: pointer;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.roadmap-toggle-btn:hover { background: #fff; }
+
+.roadmap-expandable {
+  overflow: hidden;
+  max-height: 0;
+  background: var(--z900);
+  border: 1px solid var(--z800);
+  border-top: none;
+  transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.roadmap-expandable.open { max-height: 8000px; padding: 4rem 2rem; }
+
+/* ── Chat Input ── */
+.chat-input-container {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  padding: 1.5rem 0 2.5rem 0;
+  background: linear-gradient(to top, var(--black) 80%, transparent);
+  z-index: 100;
+}
+
+/* ── Staging Area ── */
+.staging-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 2rem;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.staging-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--z900);
+  border: 1px solid var(--z800);
+  padding: 0.4rem 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--z400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.staging-chip .remove-file {
+  background: none; border: none; color: var(--z700); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 2px;
+}
+.staging-chip .remove-file:hover { color: var(--red); }
+.staging-chip .file-name { color: var(--ivory); }
+
+.chat-input-wrapper { max-width: 860px; margin: 0 auto; padding: 0 2rem; display: flex; gap: 0.75rem; position: relative; }
+
+.chat-input {
+  flex-grow: 1;
+  background: var(--z900);
+  border: 1px solid var(--z800);
+  color: var(--ivory);
+  padding: 1.1rem 1.25rem;
+  font-family: var(--sans);
+  font-size: 1rem;
+  outline: none;
+}
+.chat-input:focus { border-color: var(--z500); }
+
+.add-files-btn {
+  background: var(--z900);
+  border: 1px solid var(--z800);
+  color: var(--z500);
+  padding: 0 1.25rem;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.add-files-btn:hover { color: var(--ivory); border-color: var(--z500); }
+
+.send-btn {
+  background: none; border: none; color: var(--red);
+  cursor: pointer; padding: 0.5rem; margin-left: -3rem;
+  z-index: 10;
+}
+.send-btn:hover { color: #fff; }
+
+/* ── Phrased Loading ── */
+.phrase-container {
+  display: flex; align-items: center; gap: 1rem;
+  font-family: var(--mono); font-size: 0.75rem; color: var(--red);
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+.phrase-text { animation: phrasePulse 2s ease-in-out infinite; }
+@keyframes phrasePulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+.spinner-small {
+  width: 12px; height: 12px;
+  border: 2px solid rgba(229,57,53,0.2);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Roadmap Typography ── */
+.roadmap-content h1 { font-family: var(--serif); font-size: 2.5rem; margin-bottom: 2rem; }
+.roadmap-content h2 { font-family: var(--serif); font-size: 1.6rem; border-bottom: 1px solid var(--z800); padding-bottom: 0.75rem; margin: 3rem 0 1.5rem; }
+.roadmap-content h3 { font-family: var(--mono); font-size: 0.75rem; color: var(--red); margin-top: 2rem; }
+.roadmap-content p { color: var(--z400); margin-bottom: 1.25rem; }
+.roadmap-content ul { list-style: square; padding-left: 1.5rem; margin-bottom: 1.5rem; }
+.roadmap-content li { color: var(--z500); margin-bottom: 0.6rem; }
