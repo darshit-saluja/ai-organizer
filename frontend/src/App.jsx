@@ -104,7 +104,7 @@ export default function App() {
   }, [messages]);
 
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && messages.length > 0) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
