@@ -1,8 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { motion } from 'framer-motion';
-import { DottedSurface } from '@/components/ui/dotted-surface';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MODAL_URL = import.meta.env.VITE_MODAL_URL || 'https://getluminousai--ai-organizer-backend-generate-roadmap.modal.run';
 
@@ -14,20 +13,6 @@ const PHRASES = [
   "Finalizing roadmap document...",
   "Polishing strategic narrative..."
 ];
-
-// ── Types ──
-
-interface FileData {
-  filename: string;
-  content: string;
-  word_count: number;
-  line_count: number;
-}
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
 
 // ── Components ──
 
@@ -49,7 +34,7 @@ function PhraseCycler() {
   );
 }
 
-function CollapsibleRoadmap({ content }: { content: string }) {
+function CollapsibleRoadmap({ content }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -76,7 +61,7 @@ function CollapsibleRoadmap({ content }: { content: string }) {
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({ message }) {
   const roadmapRegex = /\[ROADMAP_START\]([\s\S]*?)\[ROADMAP_END\]/;
   const match = message.content.match(roadmapRegex);
   const displayText = message.content.replace(roadmapRegex, '').trim();
@@ -98,18 +83,18 @@ function MessageBubble({ message }: { message: Message }) {
 
 // ── Main App ──
 export default function App() {
-  const [files, setFiles] = useState<FileData[]>([]);
-  const [pendingFiles, setPendingFiles] = useState<FileData[]>([]); // STAGED FILES
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [currentRoadmap, setCurrentRoadmap] = useState<string | null>(null);
+  const [files, setFiles] = useState([]);
+  const [pendingFiles, setPendingFiles] = useState([]); // STAGED FILES
+  const [messages, setMessages] = useState([]);
+  const [currentRoadmap, setCurrentRoadmap] = useState(null);
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const appendFilesRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef(null);
+  const appendFilesRef = useRef(null);
 
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+    const handleBeforeUnload = (e) => {
       if (messages.length > 0) {
         e.preventDefault();
         e.returnValue = '';
@@ -125,7 +110,7 @@ export default function App() {
     }
   }, [messages]);
 
-  const processRequest = async (updatedMessages: Message[], currentFiles: FileData[] = files) => {
+  const processRequest = async (updatedMessages, currentFiles = files) => {
     setIsProcessing(true);
     try {
       const response = await fetch(MODAL_URL, {
@@ -143,7 +128,7 @@ export default function App() {
       if (data.error) throw new Error(data.error);
 
       // Add assistant response
-      const assistantMsg: Message = { role: 'assistant', content: data.response };
+      const assistantMsg = { role: 'assistant', content: data.response };
       setMessages(prev => [...prev, assistantMsg]);
 
       // Update roadmap state if present
@@ -152,30 +137,27 @@ export default function App() {
       if (match) {
         setCurrentRoadmap(match[1].trim());
       }
-    } catch (err: any) {
+    } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: `[CRITICAL ERROR] ${err.message}` }]);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleInitialFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const acceptedFiles = Array.from(e.target.files || []);
+  const handleInitialFiles = async (e) => {
+    const acceptedFiles = Array.from(e.target.files);
     if (acceptedFiles.length === 0) return;
 
-    const fileData: FileData[] = await Promise.all(
+    const fileData = await Promise.all(
       acceptedFiles.map(file =>
-        new Promise<FileData>((resolve, reject) => {
+        new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = (ev) => {
-            const content = ev.target?.result as string;
-            resolve({
-              filename: file.name,
-              content: content,
-              word_count: content.split(/\s+/).filter(Boolean).length,
-              line_count: content.split(/\r\n|\r|\n/).length,
-            });
-          };
+          reader.onload = (ev) => resolve({
+            filename: file.name,
+            content: ev.target.result,
+            word_count: ev.target.result.split(/\s+/).filter(Boolean).length,
+            line_count: ev.target.result.split(/\r\n|\r|\n/).length,
+          });
           reader.onerror = reject;
           reader.readAsText(file);
         })
@@ -183,29 +165,26 @@ export default function App() {
     );
 
     setFiles(fileData);
-    const initialMsg: Message = { role: 'user', content: "Please analyze these files and generate a comprehensive roadmap." };
+    const initialMsg = { role: 'user', content: "Please analyze these files and generate a comprehensive roadmap." };
     setMessages([initialMsg]);
     await processRequest([initialMsg], fileData);
   };
 
   // Stage files without sending
-  const handleStageFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const acceptedFiles = Array.from(e.target.files || []);
+  const handleStageFiles = async (e) => {
+    const acceptedFiles = Array.from(e.target.files);
     if (acceptedFiles.length === 0) return;
 
-    const stagedData: FileData[] = await Promise.all(
+    const stagedData = await Promise.all(
       acceptedFiles.map(file =>
-        new Promise<FileData>((resolve, reject) => {
+        new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = (ev) => {
-            const content = ev.target?.result as string;
-            resolve({
-              filename: file.name,
-              content: content,
-              word_count: content.split(/\s+/).filter(Boolean).length,
-              line_count: content.split(/\r\n|\r|\n/).length,
-            });
-          };
+          reader.onload = (ev) => resolve({
+            filename: file.name,
+            content: ev.target.result,
+            word_count: ev.target.result.split(/\s+/).filter(Boolean).length,
+            line_count: ev.target.result.split(/\r\n|\r|\n/).length,
+          });
           reader.onerror = reject;
           reader.readAsText(file);
         })
@@ -214,14 +193,14 @@ export default function App() {
 
     setPendingFiles(prev => [...prev, ...stagedData]);
     // RESET THE INPUT so same file can be selected again if needed
-    if (e.target) e.target.value = '';
+    e.target.value = '';
   };
 
-  const removePendingFile = (index: number) => {
+  const removePendingFile = (index) => {
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputText.trim() && pendingFiles.length === 0) return;
     if (isProcessing) return;
@@ -232,8 +211,8 @@ export default function App() {
       setFiles(updatedFiles);
     }
 
-    const newMsg: Message = { role: 'user', content: inputText };
-    const updatedMessages: Message[] = [...messages, newMsg];
+    const newMsg = { role: 'user', content: inputText };
+    const updatedMessages = [...messages, newMsg];
     
     setMessages(updatedMessages);
     setInputText('');
@@ -244,8 +223,6 @@ export default function App() {
 
   return (
     <div className="app">
-      <DottedSurface />
-      
       <motion.header 
         className="header"
         initial={{ opacity: 0, y: -20 }}
