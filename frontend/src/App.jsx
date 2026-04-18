@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
-const MODAL_URL = 'https://getluminousai--ai-organizer-backend-generate-roadmap.modal.run';
+const MODAL_URL = import.meta.env.VITE_MODAL_URL || 'https://getluminousai--ai-organizer-backend-generate-roadmap.modal.run';
 
 const PHRASES = [
   "Scanning source artifacts...",
