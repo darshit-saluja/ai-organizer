@@ -146,6 +146,7 @@ body::before {
 .vault-trigger {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 1rem;
   background: var(--red);
   color: #fff;
@@ -160,6 +161,21 @@ body::before {
   border: 1px solid var(--red);
   position: relative;
   overflow: hidden;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .vault-trigger {
+    padding: 1rem 1.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    animation: mobileGlow 3s infinite alternate ease-in-out;
+  }
+}
+
+@keyframes mobileGlow {
+  0% { box-shadow: 0 0 5px rgba(229, 57, 53, 0.2), inset 0 0 0px rgba(255,255,255,0); }
+  100% { box-shadow: 0 0 20px rgba(229, 57, 53, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.1); }
 }
 
 .vault-trigger:hover {
