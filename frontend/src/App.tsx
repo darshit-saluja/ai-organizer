@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { motion } from 'framer-motion';
+import { DottedSurface } from '@/components/ui/dotted-surface';
 
 const MODAL_URL = import.meta.env.VITE_MODAL_URL || 'https://getluminousai--ai-organizer-backend-generate-roadmap.modal.run';
 
@@ -12,6 +14,20 @@ const PHRASES = [
   "Finalizing roadmap document...",
   "Polishing strategic narrative..."
 ];
+
+// ── Types ──
+
+interface FileData {
+  filename: string;
+  content: string;
+  word_count: number;
+  line_count: number;
+}
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 // ── Components ──
 
@@ -33,7 +49,7 @@ function PhraseCycler() {
   );
 }
 
-function CollapsibleRoadmap({ content }) {
+function CollapsibleRoadmap({ content }: { content: string }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -60,7 +76,7 @@ function CollapsibleRoadmap({ content }) {
   );
 }
 
-function MessageBubble({ message }) {
+function MessageBubble({ message }: { message: Message }) {
   const roadmapRegex = /\[ROADMAP_START\]([\s\S]*?)\[ROADMAP_END\]/;
   const match = message.content.match(roadmapRegex);
   const displayText = message.content.replace(roadmapRegex, '').trim();
@@ -82,18 +98,18 @@ function MessageBubble({ message }) {
 
 // ── Main App ──
 export default function App() {
-  const [files, setFiles] = useState([]);
-  const [pendingFiles, setPendingFiles] = useState([]); // STAGED FILES
-  const [messages, setMessages] = useState([]);
-  const [currentRoadmap, setCurrentRoadmap] = useState(null);
+  const [files, setFiles] = useState<FileData[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<FileData[]>([]); // STAGED FILES
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [currentRoadmap, setCurrentRoadmap] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   
-  const scrollRef = useRef(null);
-  const appendFilesRef = useRef(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const appendFilesRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (messages.length > 0) {
         e.preventDefault();
         e.returnValue = '';
@@ -109,7 +125,7 @@ export default function App() {
     }
   }, [messages]);
 
-  const processRequest = async (updatedMessages, currentFiles = files) => {
+  const processRequest = async (updatedMessages: Message[], currentFiles: FileData[] = files) => {
     setIsProcessing(true);
     try {
       const response = await fetch(MODAL_URL, {
@@ -127,7 +143,7 @@ export default function App() {
       if (data.error) throw new Error(data.error);
 
       // Add assistant response
-      const assistantMsg = { role: 'assistant', content: data.response };
+      const assistantMsg: Message = { role: 'assistant', content: data.response };
       setMessages(prev => [...prev, assistantMsg]);
 
       // Update roadmap state if present
@@ -136,27 +152,30 @@ export default function App() {
       if (match) {
         setCurrentRoadmap(match[1].trim());
       }
-    } catch (err) {
+    } catch (err: any) {
       setMessages(prev => [...prev, { role: 'assistant', content: `[CRITICAL ERROR] ${err.message}` }]);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleInitialFiles = async (e) => {
-    const acceptedFiles = Array.from(e.target.files);
+  const handleInitialFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const acceptedFiles = Array.from(e.target.files || []);
     if (acceptedFiles.length === 0) return;
 
-    const fileData = await Promise.all(
+    const fileData: FileData[] = await Promise.all(
       acceptedFiles.map(file =>
-        new Promise((resolve, reject) => {
+        new Promise<FileData>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = (ev) => resolve({
-            filename: file.name,
-            content: ev.target.result,
-            word_count: ev.target.result.split(/\s+/).filter(Boolean).length,
-            line_count: ev.target.result.split(/\r\n|\r|\n/).length,
-          });
+          reader.onload = (ev) => {
+            const content = ev.target?.result as string;
+            resolve({
+              filename: file.name,
+              content: content,
+              word_count: content.split(/\s+/).filter(Boolean).length,
+              line_count: content.split(/\r\n|\r|\n/).length,
+            });
+          };
           reader.onerror = reject;
           reader.readAsText(file);
         })
@@ -164,26 +183,29 @@ export default function App() {
     );
 
     setFiles(fileData);
-    const initialMsg = { role: 'user', content: "Please analyze these files and generate a comprehensive roadmap." };
+    const initialMsg: Message = { role: 'user', content: "Please analyze these files and generate a comprehensive roadmap." };
     setMessages([initialMsg]);
     await processRequest([initialMsg], fileData);
   };
 
   // Stage files without sending
-  const handleStageFiles = async (e) => {
-    const acceptedFiles = Array.from(e.target.files);
+  const handleStageFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const acceptedFiles = Array.from(e.target.files || []);
     if (acceptedFiles.length === 0) return;
 
-    const stagedData = await Promise.all(
+    const stagedData: FileData[] = await Promise.all(
       acceptedFiles.map(file =>
-        new Promise((resolve, reject) => {
+        new Promise<FileData>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = (ev) => resolve({
-            filename: file.name,
-            content: ev.target.result,
-            word_count: ev.target.result.split(/\s+/).filter(Boolean).length,
-            line_count: ev.target.result.split(/\r\n|\r|\n/).length,
-          });
+          reader.onload = (ev) => {
+            const content = ev.target?.result as string;
+            resolve({
+              filename: file.name,
+              content: content,
+              word_count: content.split(/\s+/).filter(Boolean).length,
+              line_count: content.split(/\r\n|\r|\n/).length,
+            });
+          };
           reader.onerror = reject;
           reader.readAsText(file);
         })
@@ -192,14 +214,14 @@ export default function App() {
 
     setPendingFiles(prev => [...prev, ...stagedData]);
     // RESET THE INPUT so same file can be selected again if needed
-    e.target.value = '';
+    if (e.target) e.target.value = '';
   };
 
-  const removePendingFile = (index) => {
+  const removePendingFile = (index: number) => {
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() && pendingFiles.length === 0) return;
     if (isProcessing) return;
@@ -210,8 +232,8 @@ export default function App() {
       setFiles(updatedFiles);
     }
 
-    const newMsg = { role: 'user', content: inputText };
-    const updatedMessages = [...messages, newMsg];
+    const newMsg: Message = { role: 'user', content: inputText };
+    const updatedMessages: Message[] = [...messages, newMsg];
     
     setMessages(updatedMessages);
     setInputText('');
@@ -222,7 +244,14 @@ export default function App() {
 
   return (
     <div className="app">
-      <header className="header">
+      <DottedSurface />
+      
+      <motion.header 
+        className="header"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      >
         <div>
           <h1 className="header-title">AI Organizer</h1>
           <p className="header-sub" style={{ fontFamily: 'Space Mono', fontSize: '0.65rem', textTransform: 'uppercase', color: '#71717a', letterSpacing: '0.1em', marginTop: '0.4rem' }}>
@@ -230,24 +259,60 @@ export default function App() {
           </p>
         </div>
         <div className="status-dot" />
-      </header>
+      </motion.header>
 
       <main className="chat-feed">
         {messages.length === 0 && (
-          <div className="hero-box">
-            <div className="hero-box-accent" />
-            <h2 className="hero-title">Initialize Workspace</h2>
-            <p className="hero-desc">
-              Drop your scattered notes, brain dumps, and artifacts below. 
-              The system will build a high-density roadmap to guide your execution.
-            </p>
+          <motion.div 
+            className="workspace-vault"
+            initial={{ opacity: 0, scale: 0.98, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+          >
+            <div className="vault-corners" />
+            <div className="tech-readout tl">SYST//READY</div>
+            <div className="tech-readout tr">LOC//{new Date().getHours()}:{new Date().getMinutes()} GMT</div>
+            <div className="tech-readout bl">SECURITY//HIGH</div>
+            <div className="tech-readout br">COORD//40.7128.N</div>
+
+            <motion.h2 
+              className="hero-title"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+            >
+              Initialize <br />Strategic Workspace
+            </motion.h2>
             
-            <label className="dropzone-trigger">
-              + Upload Artifacts
+            <motion.p 
+              className="hero-desc"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              Ingest your scattered technical notes and brain dumps. 
+              The system will architect a high-density execution roadmap.
+            </motion.p>
+            
+            <motion.label 
+              className="vault-trigger"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.7 }}
+            >
+              <span>+ Ingest Artifacts</span>
               <input type="file" multiple onChange={handleInitialFiles} style={{ display: 'none' }} />
-            </label>
-            <span className="dropzone-note">Supported formats: .txt, .md, .markdown</span>
-          </div>
+            </motion.label>
+            
+            <motion.span 
+              className="dropzone-note"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 1 }}
+            >
+              [ Accepted Formats: .txt, .md, .markdown ]
+            </motion.span>
+          </motion.div>
         )}
 
         {messages.map((msg, i) => (
